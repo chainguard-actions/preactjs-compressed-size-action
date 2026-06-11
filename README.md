@@ -1,0 +1,1 @@
+# preactjs-compressed-size-action
