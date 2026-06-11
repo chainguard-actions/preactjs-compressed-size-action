@@ -1,0 +1,193 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`diffTable 1`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`five.js\` | 6.5 kB |
+| \`three.js\` | 300 B |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 2`] = `
+"| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`five.js\` | 6.5 kB |
+| \`three.js\` | 300 B |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 3`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`five.js\` | 6.5 kB | 0 B |  |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`three.js\` | 300 B | 0 B |  |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |"
+`;
+
+exports[`diffTable 4`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |"
+`;
+
+exports[`diffTable 5`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size | Change |
+| :--- | :---: | :---: |
+| \`five.js\` | 6.5 kB | 0 B |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |
+| \`three.js\` | 300 B | 0 B |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 6`] = `
+"**Size Change:** 0 B 
+
+**Total Size:** 21.3 kB
+
+
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`five.js\` | 6.5 kB |
+| \`four.js\` | 4.5 kB |
+| \`one.js\` | 5 kB |
+| \`three.js\` | 300 B |
+| \`two.js\` | 5 kB |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 7`] = `
+"**Size Change:** +2.5 kB (+100%) 🆘
+
+**Total Size:** 5 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |"
+`;
+
+exports[`diffTable 8`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`three.js\` | 300 B |
+| \`five.js\` | 6.5 kB |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 9`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`three.js\` | 300 B |
+| \`five.js\` | 6.5 kB |
+
+</details>
+
+"
+`;
+
+exports[`diffTable 10`] = `
+"**Size Change:** +9 B (+0.04%) 
+
+**Total Size:** 21.3 kB
+
+| Filename | Size | Change |  |
+| :--- | :---: | :---: | :---: |
+| \`one.js\` | 5 kB | +2.5 kB (+100%) | 🆘 |
+| \`four.js\` | 4.5 kB | +9 B (+0.2%) |  |
+| \`two.js\` | 5 kB | -2.5 kB (-33.33%) | 🎉 |
+
+<details><summary>ℹ️ <strong>View Unchanged</strong></summary>
+
+| Filename | Size |
+| :--- | :---: |
+| \`three.js\` | 300 B |
+| \`five.js\` | 6.5 kB |
+
+</details>
+
+"
+`;

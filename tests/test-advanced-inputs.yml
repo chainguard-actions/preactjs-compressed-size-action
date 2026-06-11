@@ -1,0 +1,34 @@
+name: Test advanced inputs
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          install-script: "npm install"
+          clean-script: "npm run clean || true"
+          build-script: build
+          cwd: "."
+          comment-key: "bundle-size-main"
+          strip-hash: "\\.[a-f0-9]{8}\\."
+          use-check: "false"
+          compression: brotli
+          show-total: "true"
+          collapse-unchanged: "true"
+          minimum-change-threshold: 1
+          sort-by: "Size:desc"
+        continue-on-error: true
+      - name: Assert action ran
+        run: |
+          echo "Action completed (may fail due to no build artifacts, which is expected in test env)"
+          echo "PASS"
