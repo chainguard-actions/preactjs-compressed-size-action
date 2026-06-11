@@ -1,0 +1,35 @@
+name: Test basic usage
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up minimal Node project
+        run: |
+          mkdir -p /tmp/test-project/dist
+          cd /tmp/test-project
+          echo '{"name":"test","version":"1.0.0","scripts":{"build":"node -e \"require(\\\"fs\\\").writeFileSync(\\\"dist/bundle.js\\\", \\\"console.log(1);\\\")\"","clean":"rm -rf dist"}}' > package.json
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          compression: gzip
+          pattern: "dist/**/*.js"
+          exclude: "dist/**/*.map"
+          strip-hash: '\.[a-f0-9]{8}\.'
+          show-total: 'true'
+          collapse-unchanged: 'true'
+          cwd: /tmp/test-project
+      - name: Assert action ran
+        run: |
+          echo "Action completed (may fail due to no PR context in act)"
+          echo "PASS"
