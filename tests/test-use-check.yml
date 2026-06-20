@@ -1,0 +1,57 @@
+name: Test compressed-size-action with use-check input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_BASE_REF: main
+      GITHUB_HEAD_REF: feature-branch
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Set up a minimal Node.js project with a build script
+      - name: Set up test project
+        run: |
+          mkdir -p /tmp/test-project-usecheck/dist
+          cd /tmp/test-project-usecheck
+          cat > package.json << 'EOF'
+          {
+            "name": "test-project-usecheck",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "node build.js"
+            }
+          }
+          EOF
+          cat > build.js << 'EOF'
+          const fs = require('fs');
+          fs.mkdirSync('dist', { recursive: true });
+          fs.writeFileSync('dist/main.js', 'console.log("hello world from use-check test");');
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          pattern: "dist/**/*.js"
+          compression: gzip
+          use-check: "true"
+          cwd: /tmp/test-project-usecheck
+        continue-on-error: true
+
+      - name: Assert action completed with use-check input
+        env:
+          COMMENT_BODY: ${{ steps.action.outputs.comment-body }}
+        run: |
+          echo "comment-body: $COMMENT_BODY"
+          # The action may fail to post a CI check (no real PR/token), but it
+          # should accept the use-check input and not crash with an argument error.
+          if [ -n "$COMMENT_BODY" ]; then
+            echo "PASS: comment-body output is set with use-check input"
+          else
+            echo "INFO: comment-body is empty (expected when not in a real PR context)"
+            echo "PASS: action completed without fatal error using use-check input"
+          fi

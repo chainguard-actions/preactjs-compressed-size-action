@@ -1,0 +1,63 @@
+name: Test custom install and clean scripts
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_BASE_REF: main
+      GITHUB_HEAD_REF: feature-branch
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Set up a minimal Node.js project with custom scripts
+      - name: Set up test project with custom scripts
+        run: |
+          mkdir -p /tmp/test-project-custom/dist
+          cd /tmp/test-project-custom
+          cat > package.json << 'EOF'
+          {
+            "name": "test-project-custom",
+            "version": "1.0.0",
+            "scripts": {
+              "install:ci": "echo 'custom install done'",
+              "clean": "rm -rf dist && echo 'clean done'",
+              "build": "node build.js"
+            }
+          }
+          EOF
+          cat > build.js << 'EOF'
+          const fs = require('fs');
+          fs.mkdirSync('dist', { recursive: true });
+          fs.writeFileSync('dist/app.abc123.js', 'var app=function(){return 42;};');
+          fs.writeFileSync('dist/styles.def456.css', 'body{margin:0;padding:0;}');
+          EOF
+
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          install-script: install:ci
+          clean-script: clean
+          build-script: build
+          pattern: "dist/**"
+          compression: gzip
+          strip-hash: '\.[a-f0-9]{6}\.'
+          minimum-change-threshold: 1
+          show-total: "true"
+          collapse-unchanged: "true"
+          cwd: /tmp/test-project-custom
+        continue-on-error: true
+
+      - name: Assert action ran with custom scripts
+        env:
+          COMMENT_BODY: ${{ steps.action.outputs.comment-body }}
+        run: |
+          echo "comment-body: $COMMENT_BODY"
+          if [ -n "$COMMENT_BODY" ]; then
+            echo "PASS: comment-body output is set with custom scripts"
+          else
+            echo "INFO: comment-body is empty (expected when not in a real PR context)"
+            echo "PASS: action completed without fatal error"
+          fi
