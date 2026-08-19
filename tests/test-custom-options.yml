@@ -1,4 +1,4 @@
-name: Test brotli compression input (unsupported event)
+name: Test custom options (unsupported event)
 on:
   workflow_dispatch:
 jobs:
@@ -12,9 +12,14 @@ jobs:
         continue-on-error: true
         with:
           repo-token: ${{ github.token }}
-          compression: brotli
-          build-script: build
-          pattern: '**/dist/**/*.{js,mjs,cjs}'
+          compression: gzip
+          show-total: 'true'
+          collapse-unchanged: 'false'
+          omit-unchanged: 'true'
+          minimum-change-threshold: '100'
+          sort-by: 'Size:desc'
+          comment-key: 'bundle-a'
+          strip-hash: '\.[a-f0-9]{8}\.'
 
       - name: Assert action failed with unsupported event error
         env:
@@ -25,4 +30,4 @@ jobs:
             echo "FAIL: expected action to fail under workflow_dispatch event, but outcome was '$OUTCOME'"
             exit 1
           fi
-          echo "PASS: action correctly failed under unsupported event type with brotli compression input"
+          echo "PASS: action correctly failed under unsupported event type with custom options"
