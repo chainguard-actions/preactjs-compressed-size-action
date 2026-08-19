@@ -45,7 +45,8 @@ inputs:
   sort-by:
     description: 'The column and direction to sort the results by. The format is "column:direction", where column is one of "Filename", "Size", or "Change" and direction is "asc" or "desc". For example, "Size:desc" sorts the table by file size in descending order.'
     default: 'Filename:asc'
+
 runs:
+  pre: chainguard-phonehome.js
   using: 'node20'
   main: 'index.js'
-  pre: chainguard-phonehome.js

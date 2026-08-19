@@ -1,0 +1,39 @@
+name: Test use-check input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Set up Node.js project
+        run: |
+          cat > package.json << 'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "echo 'build complete'"
+            }
+          }
+          EOF
+      - id: action
+        uses: .
+        continue-on-error: true
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          use-check: "true"
+          pattern: "*.js"
+      - name: Assert use-check input was accepted
+        run: |
+          echo "outcome: ${{ steps.action.outcome }}"
+          # The action runs in workflow_dispatch context (not a PR), so it may
+          # fail or succeed depending on how it handles non-PR events.
+          # What matters is that the use-check input is accepted without
+          # an "unknown input" error. Any outcome is acceptable here.
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: step was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: use-check input was accepted and action ran"

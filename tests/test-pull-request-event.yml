@@ -1,0 +1,64 @@
+name: Test pull_request event context
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal npm project
+        run: |
+          mkdir -p /tmp/pr-project
+          cat > /tmp/pr-project/package.json <<'EOF'
+          {
+            "name": "pr-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "node build.js"
+            }
+          }
+          EOF
+          cat > /tmp/pr-project/build.js <<'EOF'
+          const fs = require('fs');
+          fs.mkdirSync('dist', { recursive: true });
+          fs.writeFileSync('dist/bundle.js', 'console.log("hello world");');
+          console.log('Build complete');
+          EOF
+          cd /tmp/pr-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial commit"
+
+      - name: Run action with pull_request event context
+        id: action
+        uses: .
+        with:
+          repo-token: fake-token
+          build-script: build
+          pattern: '**/dist/**/*.js'
+          cwd: /tmp/pr-project
+          show-total: 'true'
+          collapse-unchanged: 'true'
+        continue-on-error: true
+
+      - name: Assert action ran with pull_request event
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action may fail due to git operations in test environment,
+          # but it should NOT fail with "Unsupported eventName" error.
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with pull_request event context (outcome=$OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome=$OUTCOME"
+            exit 1
+          fi

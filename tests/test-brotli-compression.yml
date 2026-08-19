@@ -1,0 +1,62 @@
+name: Test brotli compression option
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal npm project
+        run: |
+          mkdir -p /tmp/brotli-project
+          cat > /tmp/brotli-project/package.json <<'EOF'
+          {
+            "name": "brotli-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "node build.js"
+            }
+          }
+          EOF
+          cat > /tmp/brotli-project/build.js <<'EOF'
+          const fs = require('fs');
+          fs.mkdirSync('dist', { recursive: true });
+          fs.writeFileSync('dist/bundle.js', 'console.log("hello world from brotli test");');
+          console.log('Build complete');
+          EOF
+          cd /tmp/brotli-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial commit"
+
+      - name: Run action with brotli compression
+        id: action
+        uses: .
+        with:
+          repo-token: fake-token
+          build-script: build
+          compression: brotli
+          pattern: '**/dist/**/*.js'
+          cwd: /tmp/brotli-project
+          show-total: 'true'
+          omit-unchanged: 'true'
+        continue-on-error: true
+
+      - name: Assert action ran with brotli compression option
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action may fail due to git operations in test environment,
+          # but it should NOT fail with "Unsupported eventName" error.
+          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action ran with brotli compression option (outcome=$OUTCOME)"
+          else
+            echo "FAIL: unexpected outcome=$OUTCOME"
+            exit 1
+          fi

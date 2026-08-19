@@ -1,0 +1,69 @@
+name: Test sort-by input variants
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      # Test sort-by with Change:desc — valid column and direction
+      - id: action-sort-change-desc
+        uses: .
+        continue-on-error: true
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          sort-by: 'Change:desc'
+
+      - name: Assert action fails on unsupported event (sort-by Change:desc accepted)
+        env:
+          OUTCOME: ${{ steps.action-sort-change-desc.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected failure for unsupported event, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: sort-by Change:desc accepted, action failed on unsupported event as expected"
+
+      # Test sort-by with Size:asc — valid column and direction
+      - id: action-sort-size-asc
+        uses: .
+        continue-on-error: true
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          sort-by: 'Size:asc'
+
+      - name: Assert action fails on unsupported event (sort-by Size:asc accepted)
+        env:
+          OUTCOME: ${{ steps.action-sort-size-asc.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected failure for unsupported event, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: sort-by Size:asc accepted, action failed on unsupported event as expected"
+
+      # Test with comment-key input
+      - id: action-comment-key
+        uses: .
+        continue-on-error: true
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          comment-key: 'bundle-main'
+          sort-by: 'Filename:asc'
+
+      - name: Assert action fails on unsupported event (comment-key accepted)
+        env:
+          OUTCOME: ${{ steps.action-comment-key.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected failure for unsupported event, got outcome=$OUTCOME"
+            exit 1
+          fi
+          echo "PASS: comment-key input accepted, action failed on unsupported event as expected"
