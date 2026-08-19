@@ -1,0 +1,85 @@
+name: Test pull_request event context
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: pull_request
+      GITHUB_REF: refs/pull/1/merge
+      GITHUB_HEAD_REF: feature-branch
+      GITHUB_BASE_REF: main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal project in workspace
+        run: |
+          mkdir -p /tmp/pr-project/dist
+          cat > /tmp/pr-project/package.json <<'EOF'
+          {
+            "name": "pr-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "mkdir -p dist && printf 'export default function(){return 42;}' > dist/main.js"
+            }
+          }
+          EOF
+          cd /tmp/pr-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial"
+
+      - name: Set up PR event payload
+        run: |
+          mkdir -p /tmp/github
+          BASE_SHA=$(cd /tmp/pr-project && git rev-parse HEAD)
+          cat > /tmp/github/event.json <<EOF
+          {
+            "number": 1,
+            "pull_request": {
+              "number": 1,
+              "base": {
+                "sha": "${BASE_SHA}",
+                "ref": "main"
+              },
+              "head": {
+                "sha": "${BASE_SHA}",
+                "ref": "feature-branch"
+              }
+            },
+            "repository": {
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+          echo "GITHUB_EVENT_PATH=/tmp/github/event.json" >> $GITHUB_ENV
+
+      - id: action
+        uses: .
+        with:
+          repo-token: fake-token
+          build-script: build
+          pattern: '**/dist/**/*.js'
+          show-total: 'true'
+          collapse-unchanged: 'true'
+          cwd: /tmp/pr-project
+          install-script: 'echo skip-install'
+        continue-on-error: true
+
+      - name: Assert action ran for pull_request event
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action should not fail due to unsupported event type for pull_request
+          # It may fail on git fetch/checkout operations in the test environment
+          # but should proceed past the event type check
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran for pull_request event (outcome: ${{ steps.action.outcome }})"

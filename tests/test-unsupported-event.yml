@@ -1,0 +1,33 @@
+name: Test unsupported event error handling
+# The compressed-size-action is a JS action that reads github.context.eventName.
+# Under act with workflow_dispatch, github.context.eventName is always
+# "workflow_dispatch", which the action explicitly rejects with a clear error.
+# This test verifies that the action fails with the expected error message,
+# confirming the event-validation logic works correctly.
+on:
+  workflow_dispatch:
+jobs:
+  test-unsupported-event:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action (expected to fail with unsupported event error)
+        id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          pattern: '**/dist/**/*.js'
+        continue-on-error: true
+
+      - name: Assert action failed due to unsupported event
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail with unsupported event error, but outcome was: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed for unsupported event (workflow_dispatch)"

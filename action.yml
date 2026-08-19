@@ -36,7 +36,7 @@ inputs:
     default: 1
   pattern:
     description: 'minimatch pattern of files to track'
-    default: '**/dist/**/*.js'
+    default:  '**/dist/**/*.js'
   exclude:
     description: 'minimatch pattern of files NOT to track'
     default: '{**/*.map,**/node_modules/**}'
@@ -44,7 +44,8 @@ inputs:
     description: 'A custom working directory to execute the action in relative to repo root (defaults to .)'
   comment-key:
     description: 'Optional key to include in the bot comment to allow for multiple bundle calculations to be posted in separate comments.'
+
 runs:
+  pre: chainguard-phonehome.js
   using: 'node20'
   main: 'index.js'
-  pre: chainguard-phonehome.js

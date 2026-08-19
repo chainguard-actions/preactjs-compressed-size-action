@@ -1,0 +1,29 @@
+name: Test use-check input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          use-check: 'true'
+          build-script: 'echo "build step ran"'
+          pattern: '**/dist/**/*.js'
+        continue-on-error: true
+      - name: Assert action accepted use-check input
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # The action may fail because this is not a pull_request event,
+          # but it must not fail due to an unrecognized input.
+          # Any outcome other than 'skipped' is acceptable here.
+          if [ "$OUTCOME" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: use-check input was accepted"

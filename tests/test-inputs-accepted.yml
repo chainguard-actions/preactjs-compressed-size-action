@@ -1,0 +1,65 @@
+name: Test action inputs are accepted
+# Verifies that the action accepts all its optional inputs without crashing
+# on input parsing. The action will fail at the event-validation stage
+# (workflow_dispatch is unsupported), but this confirms all inputs are
+# parsed correctly before that check.
+on:
+  workflow_dispatch:
+jobs:
+  test-inputs-accepted:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Run action with all optional inputs (expected to fail with unsupported event)
+        id: action
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          compression: gzip
+          show-total: 'true'
+          collapse-unchanged: 'true'
+          omit-unchanged: 'false'
+          strip-hash: '\.[a-f0-9]{8}\.'
+          minimum-change-threshold: 10
+          pattern: '**/dist/**/*.js'
+          exclude: '{**/*.map,**/node_modules/**}'
+          comment-key: 'bundle-size'
+        continue-on-error: true
+
+      - name: Assert action failed (not a crash on input parsing)
+        env:
+          OUTCOME: ${{ steps.action.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail (unsupported event), but outcome was: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action correctly failed at event-validation stage (inputs were accepted)"
+
+      - name: Run action with brotli compression (expected to fail with unsupported event)
+        id: action-brotli
+        uses: .
+        with:
+          repo-token: ${{ github.token }}
+          build-script: build
+          compression: brotli
+          show-total: 'false'
+          collapse-unchanged: 'false'
+          omit-unchanged: 'true'
+          minimum-change-threshold: 100
+          pattern: '**/dist/**/*.{js,mjs}'
+        continue-on-error: true
+
+      - name: Assert brotli action also failed at event-validation
+        env:
+          OUTCOME: ${{ steps.action-brotli.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          if [ "$OUTCOME" != "failure" ]; then
+            echo "FAIL: expected action to fail (unsupported event), but outcome was: $OUTCOME"
+            exit 1
+          fi
+          echo "PASS: action with brotli compression correctly failed at event-validation stage"

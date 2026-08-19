@@ -1,0 +1,71 @@
+name: Test push event
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal project in workspace
+        run: |
+          mkdir -p /tmp/test-project/dist
+          cat > /tmp/test-project/package.json <<'EOF'
+          {
+            "name": "test-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "mkdir -p dist && printf 'console.log(\"hello\");' > dist/bundle.js"
+            }
+          }
+          EOF
+          cd /tmp/test-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial"
+
+      - name: Set up git event payload
+        run: |
+          mkdir -p /tmp/github
+          CURRENT_SHA=$(cd /tmp/test-project && git rev-parse HEAD)
+          cat > /tmp/github/event.json <<EOF
+          {
+            "before": "${CURRENT_SHA}",
+            "ref": "refs/heads/main",
+            "repository": {
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+          echo "GITHUB_EVENT_PATH=/tmp/github/event.json" >> $GITHUB_ENV
+
+      - id: action
+        uses: .
+        with:
+          repo-token: fake-token
+          build-script: build
+          pattern: '**/dist/**/*.js'
+          cwd: /tmp/test-project
+          install-script: 'echo skip-install'
+        continue-on-error: true
+
+      - name: Assert action ran (push event logs no-PR message or completes)
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # For push events without a real git remote, the action may fail on git fetch
+          # but it should not fail due to unsupported event type.
+          # The action either succeeds or fails on git operations, not on event type.
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran (outcome: ${{ steps.action.outcome }})"

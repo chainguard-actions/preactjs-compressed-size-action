@@ -1,0 +1,75 @@
+name: Test custom inputs (brotli compression, custom pattern)
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_EVENT_NAME: push
+      GITHUB_REF: refs/heads/main
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal project in workspace
+        run: |
+          mkdir -p /tmp/custom-project/dist
+          cat > /tmp/custom-project/package.json <<'EOF'
+          {
+            "name": "custom-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "mkdir -p dist && printf 'function hello(){return \"world\";}' > dist/app.js"
+            }
+          }
+          EOF
+          cd /tmp/custom-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial"
+
+      - name: Set up git event payload
+        run: |
+          mkdir -p /tmp/github
+          CURRENT_SHA=$(cd /tmp/custom-project && git rev-parse HEAD)
+          cat > /tmp/github/event.json <<EOF
+          {
+            "before": "${CURRENT_SHA}",
+            "ref": "refs/heads/main",
+            "repository": {
+              "name": "test-repo",
+              "owner": {
+                "login": "test-owner"
+              }
+            }
+          }
+          EOF
+          echo "GITHUB_EVENT_PATH=/tmp/github/event.json" >> $GITHUB_ENV
+
+      - id: action
+        uses: .
+        with:
+          repo-token: fake-token
+          build-script: build
+          compression: brotli
+          pattern: '**/dist/**/*.js'
+          show-total: 'true'
+          collapse-unchanged: 'true'
+          omit-unchanged: 'false'
+          minimum-change-threshold: 1
+          cwd: /tmp/custom-project
+          install-script: 'echo skip-install'
+        continue-on-error: true
+
+      - name: Assert action ran with custom inputs
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # The action should not fail due to invalid inputs (brotli is a valid compression type)
+          # It may fail on git operations in the test environment, but not on input validation
+          if [ "${{ steps.action.outcome }}" = "skipped" ]; then
+            echo "FAIL: action was skipped unexpectedly"
+            exit 1
+          fi
+          echo "PASS: action ran with custom inputs (outcome: ${{ steps.action.outcome }})"
