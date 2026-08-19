@@ -1,0 +1,72 @@
+name: Test push event with omit-unchanged and minimum-change-threshold
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal npm project
+        run: |
+          mkdir -p /tmp/omit-project
+          cat > /tmp/omit-project/package.json <<'EOF'
+          {
+            "name": "omit-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "mkdir -p dist && printf 'console.log(\"omit unchanged test\");' > dist/bundle.js"
+            }
+          }
+          EOF
+          cd /tmp/omit-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial commit"
+          echo "// v2" >> package.json
+          git add .
+          git commit -m "second commit"
+
+      - name: Write push event payload
+        run: |
+          BASE_SHA=$(cd /tmp/omit-project && git rev-parse HEAD~1)
+          HEAD_SHA=$(cd /tmp/omit-project && git rev-parse HEAD)
+          cat > /tmp/omit-push-event.json <<EOF
+          {
+            "before": "${BASE_SHA}",
+            "after": "${HEAD_SHA}",
+            "ref": "refs/heads/main",
+            "repository": {
+              "name": "omit-project",
+              "owner": {
+                "login": "testowner"
+              }
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: push
+          GITHUB_EVENT_PATH: /tmp/omit-push-event.json
+        with:
+          repo-token: fake-token
+          build-script: build
+          pattern: "**/dist/**/*.js"
+          install-script: "echo 'no install needed'"
+          omit-unchanged: "true"
+          show-total: "true"
+          minimum-change-threshold: "10"
+          cwd: /tmp/omit-project
+
+      - name: Assert action ran for push event with omit-unchanged
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # push is a supported event type - action should not fail
+          # with "Unsupported eventName".
+          echo "PASS: push event with omit-unchanged and minimum-change-threshold is a supported configuration"

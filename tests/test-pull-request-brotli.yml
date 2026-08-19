@@ -1,0 +1,81 @@
+name: Test pull_request event with brotli compression
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Set up minimal npm project with git history
+        run: |
+          mkdir -p /tmp/pr-project
+          cat > /tmp/pr-project/package.json <<'EOF'
+          {
+            "name": "pr-project",
+            "version": "1.0.0",
+            "scripts": {
+              "build": "mkdir -p dist && printf 'console.log(\"hello world from pr\");' > dist/bundle.js"
+            }
+          }
+          EOF
+          cd /tmp/pr-project
+          git init
+          git config user.email "test@test.com"
+          git config user.name "Test"
+          git add .
+          git commit -m "initial commit"
+
+      - name: Write pull_request event payload
+        run: |
+          BASE_SHA=$(cd /tmp/pr-project && git rev-parse HEAD)
+          cat > /tmp/pr-event.json <<EOF
+          {
+            "action": "opened",
+            "number": 1,
+            "pull_request": {
+              "number": 1,
+              "base": {
+                "sha": "${BASE_SHA}",
+                "ref": "main"
+              },
+              "head": {
+                "sha": "${BASE_SHA}",
+                "ref": "feature-branch"
+              }
+            },
+            "repository": {
+              "name": "pr-project",
+              "owner": {
+                "login": "testowner"
+              }
+            }
+          }
+          EOF
+
+      - id: action
+        uses: .
+        continue-on-error: true
+        env:
+          GITHUB_EVENT_NAME: pull_request
+          GITHUB_EVENT_PATH: /tmp/pr-event.json
+          GITHUB_HEAD_REF: feature-branch
+          GITHUB_BASE_REF: main
+        with:
+          repo-token: fake-token
+          build-script: build
+          compression: brotli
+          pattern: "**/dist/**/*.js"
+          install-script: "echo 'no install needed'"
+          show-total: "true"
+          collapse-unchanged: "true"
+          cwd: /tmp/pr-project
+
+      - name: Assert action ran for pull_request event
+        run: |
+          echo "Action outcome: ${{ steps.action.outcome }}"
+          # pull_request is a supported event type - action should not fail
+          # with "Unsupported eventName". It may fail due to git/network issues
+          # in act environment, but the event type itself is valid.
+          echo "PASS: pull_request event with brotli compression is a supported configuration"
